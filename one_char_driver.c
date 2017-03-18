@@ -65,11 +65,11 @@ ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t 
 	    *f_pos += 1;
 	    return_value = 1;
 	} else {
-	    return 1;
+	    return_value = 1;
         }
    }
    if (count > 1) {
-	return ENOBUFS;
+	return_value = -ENOSPC;
    }
    return return_value;
 }
