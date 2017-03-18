@@ -65,12 +65,12 @@ ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t 
 	    *f_pos += 1;
 	    return_value = 1;
 	} else {
-	    return_value = 0;
+	    return 1;
         }
    }
    if (count > 1) {
-	printk(KERN_ALERT "write error: No space left on device");
-   } 
+	return ENOBUFS;
+   }
    return return_value;
 }
 
