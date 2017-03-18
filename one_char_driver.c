@@ -43,10 +43,14 @@ ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 {    
     int result = 0;
     result = copy_to_user(buf, onebyte_data, 1);
-    if (result == 0) {
+    if (result != 0) {
+        printk(KERN_ALERT "onebyte device read failed!\n");
+	return 0;
+    }
+    if (*f_pos == 0) {
+	*f_pos+=1;
 	return 1;
     } else {
-        printk(KERN_ALERT "onebyte device read failed!\n");
 	return 0;
     }
 }
@@ -54,20 +58,20 @@ ssize_t onebyte_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 ssize_t onebyte_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
    int result = 0;
-   if (count == 1) {
+   int return_value = 0;
+   if (count >= 1) {
 	result = copy_from_user(onebyte_data, buf, 1);	
 	if (result == 0) {
-	    return 1;
+	    *f_pos += 1;
+	    return_value = 1;
 	} else {
-	    return 0;
+	    return_value = 0;
         }
-   } else if (count > 1) {
-	copy_from_user(onebyte_data, buf, 1);	
-	printk(KERN_ALERT "write error: No space left on device");
-        return 1;
-   } else {
-	return 0;
    }
+   if (count > 1) {
+	printk(KERN_ALERT "write error: No space left on device");
+   } 
+   return return_value;
 }
 
 static int onebyte_init(void)
