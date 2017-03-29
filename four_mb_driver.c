@@ -9,7 +9,7 @@
 #include <asm/uaccess.h>
 #define MAJOR_NUMBER 62
 
-#define MEM_SIZE 4096
+#define MEM_SIZE 4194304
 
 /* forward declaration */
 int four_open(struct inode *inode, struct file *filep);
