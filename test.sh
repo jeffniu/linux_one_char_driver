@@ -1,8 +1,5 @@
-cat /dev/one
-printf a>/dev/one
-cat /dev/one
-printf b>/dev/one
-cat /dev/one
-printf abc>/dev/one
-cat /dev/one
- 
+
+echo abc > /dev/four
+cat /dev/four
+echo defg > /dev/four
+cat /dev/four

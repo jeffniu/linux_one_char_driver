@@ -3,7 +3,7 @@
 # kernel build system and can use its language.
 
 ifneq (${KERNELRELEASE},)
-    obj-m := hello_module.o one_char_driver.o
+    obj-m := four_mb_driver.o
 # Otherwise we were called directly from the command line. 
 # Invoke the kernel build system.
 else
