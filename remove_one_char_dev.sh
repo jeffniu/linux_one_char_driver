@@ -1,2 +1,0 @@
-rm /dev/one
-
