@@ -28,8 +28,8 @@ struct file_operations onebyte_fops = {
      release: four_release
 };
 
-char *onebyte_data = NULL;
 char *fourmb_data = NULL;
+ssize_t cur_size = 0;
 
 int four_open(struct inode *inode, struct file *filep)
 {
@@ -44,14 +44,17 @@ int four_release(struct inode *inode, struct file *filep)
 ssize_t four_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 {    
     int result = 0;
-    result = copy_to_user(buf, onebyte_data, 1);
-    if (result != 0) {
-        printk(KERN_ALERT "onebyte device read failed!\n");
+    int copiedByteCount = 0;
+    printk(KERN_ALERT "four_read: cur_size: %u", cur_size);
+    result = copy_to_user(buf, fourmb_data, cur_size);
+    if (result < 0) {
+        printk(KERN_ALERT "four mb device read failed!\n");
 	return 0;
     }
+    copiedByteCount = cur_size - result;
     if (*f_pos == 0) {
-	*f_pos+=1;
-	return 1;
+	*f_pos+=copiedByteCount;
+	return copiedByteCount;
     } else {
 	return 0;
     }
@@ -61,16 +64,19 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
 {
    int result = 0;
    int return_value = 0;
+   printk(KERN_ALERT "four_write: count: %u", count);
    if (count >= 1) {
-	result = copy_from_user(onebyte_data, buf, 1);	
-	if (result == 0) {
-	    *f_pos += 1;
-	    return_value = 1;
+	result = copy_from_user(fourmb_data, buf, count);	
+	if (result < 0) {
+	    printk(KERN_ALERT "four_write fail");
 	} else {
-	    return_value = 1;
+	    return_value = count-result;
+	    cur_size = return_value;
+	    printk(KERN_ALERT "four_write: byte copied: %u", return_value);
+	    *f_pos += return_value;
         }
    }
-   if (count > 1) {
+   if (count > MEM_SIZE) {
 	return_value = -ENOSPC;
    }
    return return_value;
@@ -100,21 +106,21 @@ static int four_init(void)
 
      // initialize the value to be X
      //*onebyte_data = 'X';
-     printk(KERN_ALERT "This is a onebyte device module\n");
+     printk(KERN_ALERT "This is a four mb device module\n");
      return 0;
 }
 
 static void four_exit(void)
 {
      // if the pointer is pointing to something
-     if (onebyte_data) {
+     if (fourmb_data != NULL) {
           // free the memory and assign the pointer to NULL
           kfree(fourmb_data);
          fourmb_data = NULL;
     }
      // unregister the device
      unregister_chrdev(MAJOR_NUMBER, "fourmb");
-     printk(KERN_ALERT "Onebyte device module is unloaded\n");
+     printk(KERN_ALERT "four mb device module is unloaded\n");
 }
 
 MODULE_LICENSE("GPL");
