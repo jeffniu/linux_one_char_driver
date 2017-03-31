@@ -52,7 +52,7 @@ ssize_t four_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
     if (*f_pos+count > cur_size) {
         copyCount = cur_size-(*f_pos);
     }
-    result = copy_to_user(buf, fourmb_data, copyCount);
+    result = copy_to_user(buf, fourmb_data+(*f_pos), copyCount);
     if (result < 0) {
         printk(KERN_ALERT "four mb device read failed!\n");
 	retval = 0;
@@ -74,7 +74,7 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
      copyCount = MEM_SIZE - *f_pos;
    }
    if (copyCount >= 1) {
-	result = copy_from_user(fourmb_data, buf, count);	
+	result = copy_from_user(fourmb_data+(*f_pos), buf, count);	
 	if (result < 0) {
 	    printk(KERN_ALERT "four_write fail");
             retval = 0;

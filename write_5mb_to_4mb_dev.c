@@ -2,12 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define FILE_SIZE 5000000
+#define FILE_SIZE 2000000
 
 
 int main(int argc, char * argv)
 {
     FILE* fourf = fopen("/dev/four", "w+");
+    FILE* logf = fopen("log.txt", "w+");
     char content[FILE_SIZE];
     char number[100];
     int num = 1;
@@ -19,9 +20,13 @@ int main(int argc, char * argv)
     }
     content[FILE_SIZE-1] = '\0';
 
-    fwrite(content, sizeof(char), FILE_SIZE, fourf);
+    for (int i = 0; i < FILE_SIZE; i+=1000) {
+        fwrite(content+i, sizeof(char), 1000, fourf);
+	fwrite(content+i, sizeof(char), 1000, logf);
+    }
 
     fclose(fourf);
+    fclose(logf);
     return 0;
 }
 
