@@ -9,7 +9,7 @@
 #include <asm/uaccess.h>
 #define MAJOR_NUMBER 62
 
-#define MEM_SIZE 4194304
+#define MEM_SIZE 4000000
 
 /* forward declaration */
 int four_open(struct inode *inode, struct file *filep);
@@ -29,7 +29,7 @@ struct file_operations onebyte_fops = {
 };
 
 char *fourmb_data = NULL;
-ssize_t cur_size = 0;
+int cur_size = 0; 
 
 int four_open(struct inode *inode, struct file *filep)
 {
@@ -45,41 +45,49 @@ ssize_t four_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 {    
     int result = 0;
     int copiedByteCount = 0;
-    printk(KERN_ALERT "four_read: cur_size: %u", cur_size);
-    result = copy_to_user(buf, fourmb_data, cur_size);
+    int copyCount = count;
+    int retval = 0;
+    printk(KERN_ALERT "four_read: count: %u, f_pos: %d\n", count, *f_pos);
+    
+    if (*f_pos+count > cur_size) {
+        copyCount = cur_size-(*f_pos);
+    }
+    result = copy_to_user(buf, fourmb_data, copyCount);
     if (result < 0) {
         printk(KERN_ALERT "four mb device read failed!\n");
-	return 0;
-    }
-    copiedByteCount = cur_size - result;
-    if (*f_pos == 0) {
-	*f_pos+=copiedByteCount;
-	return copiedByteCount;
+	retval = 0;
     } else {
-	return 0;
+        copiedByteCount = copyCount - result;
+        *f_pos+=copiedByteCount;
+        retval = copiedByteCount;
     }
+    return retval;
 }
 
 ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_pos)
 {
    int result = 0;
-   int return_value = 0;
-   printk(KERN_ALERT "four_write: count: %u", count);
-   if (count >= 1) {
+   int retval = 0;
+   int copyCount = count;
+   printk(KERN_ALERT "four_write: count: %u, f_pos: %d\n", count, *f_pos);
+   if (count + *f_pos > MEM_SIZE) {
+     copyCount = MEM_SIZE - *f_pos;
+   }
+   if (copyCount >= 1) {
 	result = copy_from_user(fourmb_data, buf, count);	
 	if (result < 0) {
 	    printk(KERN_ALERT "four_write fail");
+            retval = 0;
 	} else {
-	    return_value = count-result;
-	    cur_size = return_value;
-	    printk(KERN_ALERT "four_write: byte copied: %u", return_value);
-	    *f_pos += return_value;
+	    retval = copyCount-result;
+	    cur_size = *f_pos + retval;
+	    printk(KERN_ALERT "four_write: byte copied: %u, cur_size: %u\n", retval, cur_size);
+	    *f_pos += retval;
         }
+   } else {
+      retval = -ENOSPC;
    }
-   if (count > MEM_SIZE) {
-	return_value = -ENOSPC;
-   }
-   return return_value;
+   return retval;
 }
 
 static int four_init(void)
