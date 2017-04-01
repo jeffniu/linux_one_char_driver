@@ -7,6 +7,17 @@
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
+#include <linux/ioctl.h>
+
+
+#define SCULL_IOC_MAGIC 'k'
+#define SCULL_HELLO _IO(SCULL_IOC_MAGIC, 1)
+#define SCULL_READ _IOR(SCULL_IOC_MAGIC, 2, char *)
+#define SCULL_WRITE _IOW(SCULL_IOC_MAGIC, 3, char *)
+#define SCULL_RW _IOWR(SCULL_IOC_MAGIC, 4, char *)
+
+#define SCULL_IOC_MAXNR 10
+
 #define MAJOR_NUMBER 62
 
 #define MEM_SIZE 4000000
@@ -21,17 +32,64 @@ size_t count, loff_t *f_pos);
 loff_t four_llseek(struct file *filp, loff_t off, int whence);
 static void four_exit(void);
 
+long ioctl_example(struct file *filp, unsigned int cmd, unsigned long arg);
+
 /* definition of file_operation structure */
 struct file_operations onebyte_fops = {
      read:     four_read,
      write:    four_write,
      open:     four_open,
      llseek:   four_llseek,
+     unlocked_ioctl: ioctl_example,
      release: four_release
 };
 
 char *fourmb_data = NULL;
 int cur_size = 0; 
+
+char dev_msg[256];
+
+long ioctl_example(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    int err = 0, tmp;
+	int retval = 0;
+	char buff[256];
+	int index = 0;
+	if (_IOC_TYPE(cmd) != SCULL_IOC_MAGIC) return -ENOTTY;
+	if (_IOC_NR(cmd) > SCULL_IOC_MAXNR) return -ENOTTY;
+    
+	if (_IOC_DIR(cmd) & _IOC_READ) {
+		err = !access_ok(VERIFY_WRITE, (void __user*)arg, _IOC_SIZE(cmd));
+	} else if (_IOC_DIR(cmd) & _IOC_WRITE) {
+		err = !access_ok(VERIFY_READ, (void __user*)arg, _IOC_SIZE(cmd));
+	}
+	if (err) return -EFAULT;
+	
+	switch(cmd) {
+		case SCULL_HELLO:
+			printk(KERN_WARNING "hello\n");
+			break;
+		case SCULL_READ:
+			copy_to_user((char *)arg, dev_msg, 256);
+			break;
+		case SCULL_WRITE:
+			copy_from_user(dev_msg, (char *)arg , 256);
+			printk(KERN_ALERT "SCULL_WRITE dev_msg: %s", dev_msg);
+			break;
+		case SCULL_RW:
+			copy_from_user(buff, (char *)arg , 256);
+			copy_to_user((char *)arg, dev_msg, 256);
+			for (index = 0; index < 256; index++) {
+				dev_msg[index] = buff[index];
+			}
+			printk(KERN_ALERT "SCULL_RW dev_msg: %s", dev_msg);
+			break;
+		default:
+			return -ENOTTY;
+	}
+	return retval;
+}
+
 
 int four_open(struct inode *inode, struct file *filep)
 {
@@ -91,7 +149,7 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
    } else {
       retval = -ENOSPC;
    }
-   printk(KERN_ALERT "return retval: %u", retval);
+   //printk(KERN_ALERT "return retval: %u", retval);
    return retval;
 }
 
