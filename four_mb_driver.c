@@ -18,6 +18,7 @@ ssize_t four_read(struct file *filep, char *buf, size_t
 count, loff_t *f_pos);
 ssize_t four_write(struct file *filep, const char *buf,
 size_t count, loff_t *f_pos);
+loff_t four_llseek(struct file *filp, loff_t off, int whence);
 static void four_exit(void);
 
 /* definition of file_operation structure */
@@ -25,6 +26,7 @@ struct file_operations onebyte_fops = {
      read:     four_read,
      write:    four_write,
      open:     four_open,
+     llseek:   four_llseek,
      release: four_release
 };
 
@@ -80,7 +82,9 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
             retval = result;
 	} else {
 	    retval = copyCount-result;
-	    cur_size = *f_pos + retval;
+	    if( *f_pos + retval > cur_size) {
+              cur_size = *f_pos + retval;
+	    }
 	    printk(KERN_ALERT "four_write: byte copied: %u, cur_size: %u\n", retval, cur_size);
 	    *f_pos += retval;
         }
@@ -89,6 +93,26 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
    }
    printk(KERN_ALERT "return retval: %u", retval);
    return retval;
+}
+
+loff_t four_llseek(struct file *filp, loff_t off, int whence) {
+    loff_t newpos;
+    switch(whence) {
+	case 0: /*SEEK_SET*/
+  	    newpos = off;
+	    break;
+	case 1: /*SEEK_CUR*/
+	    newpos = filp->f_pos + off;
+	    break;
+	case 2: /*SEEK_END*/
+	    newpos = cur_size + off;
+	    break;
+	default:
+	    return off-1;
+    }
+    if (newpos < 0) return off-1;
+    filp->f_pos = newpos;
+    return newpos;
 }
 
 static int four_init(void)
