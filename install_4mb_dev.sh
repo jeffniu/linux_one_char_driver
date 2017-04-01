@@ -1,6 +1,6 @@
-rm /dev/four
+rm /dev/lcd
 make clean
 make
-mknod /dev/four c 62 0
+mknod /dev/lcd c 62 0
 insmod four_mb_driver.ko
 

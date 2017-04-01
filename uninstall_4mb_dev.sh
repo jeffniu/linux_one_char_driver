@@ -1,6 +1,6 @@
 rmmod four_mb_driver.ko
 make clean
-rm /dev/four
+rm /dev/lcd
 
 
 

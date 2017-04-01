@@ -77,7 +77,7 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
 	result = copy_from_user(fourmb_data+(*f_pos), buf, count);	
 	if (result < 0) {
 	    printk(KERN_ALERT "four_write fail");
-            retval = -EFAULT;
+            retval = result;
 	} else {
 	    retval = copyCount-result;
 	    cur_size = *f_pos + retval;
@@ -85,7 +85,7 @@ ssize_t four_write(struct file *filep, const char *buf, size_t count, loff_t *f_
 	    *f_pos += retval;
         }
    } else {
-      retval = -EFAULT;
+      retval = -ENOSPC;
    }
    printk(KERN_ALERT "return retval: %u", retval);
    return retval;
