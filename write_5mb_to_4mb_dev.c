@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#define FILE_SIZE 2000000
+#define FILE_SIZE 5000000
 
 
 int main(int argc, char * argv)
@@ -20,11 +21,15 @@ int main(int argc, char * argv)
     }
     content[FILE_SIZE-1] = '\0';
 
-    for (int i = 0; i < FILE_SIZE; i+=1000) {
-        fwrite(content+i, sizeof(char), 1000, fourf);
-	fwrite(content+i, sizeof(char), 1000, logf);
-    }
+    //fwrite(content, sizeof(char), FILE_SIZE, fourf);
+    //fwrite(content, sizeof(char), FILE_SIZE, logf);
 
+    int LEN = 1000000;
+    for (int i = 0; i < FILE_SIZE; i+=LEN) {
+        int count = fwrite(content+i, sizeof(char), LEN, fourf);
+	printf ("fwrite count: %d\n", count);
+	//fwrite(content+i, sizeof(char), 10000, logf);
+    }
     fclose(fourf);
     fclose(logf);
     return 0;
